@@ -1,0 +1,14 @@
+# Environnement Python
+venv/
+__pycache__/
+
+# Données
+data/*.csv
+data/*.dvc
+data/raw/
+
+# Modèles
+models/
+
+# Artefacts MLOps (MLflow)
+mlruns/
