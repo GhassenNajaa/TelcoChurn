@@ -1,0 +1,17 @@
+stages:
+  preprocess:
+    cmd: python src/preprocess.py
+    deps:
+    - data/WA_Fn-UseC_-Telco-Customer-Churn.csv
+    - src/preprocess.py
+    outs:
+    - data/processed
+    - models/scaler.pkl
+  train:
+    cmd: python src/train.py
+    deps:
+    - data/processed
+    - models/scaler.pkl
+    - src/train.py
+    outs:
+    - models/model_champion.pkl
