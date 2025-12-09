@@ -6,7 +6,7 @@ import numpy as np
 # Ajout de 'os' pour la gestion des chemins dans Docker
 import os 
 
-app = Flask(__name__)
+app = Flask(__name__)   
 
 # --- Constantes ---
 # CORRECTION MAJEURE: Chemins absolus dans le conteneur Docker (/app est le WORKDIR)
