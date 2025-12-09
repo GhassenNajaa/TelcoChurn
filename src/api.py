@@ -1,93 +1,111 @@
+import os
 import joblib
+import numpy as np
 import pandas as pd
 from flask import Flask, request, jsonify
-from sklearn.preprocessing import LabelEncoder
-import numpy as np
-# Ajout de 'os' pour la gestion des chemins dans Docker
-import os 
 
-app = Flask(__name__)   
+app = Flask(__name__)
 
-# --- Constantes ---
-# CORRECTION MAJEURE: Chemins absolus dans le conteneur Docker (/app est le WORKDIR)
+# ================================
+# CONSTANTES
+# ================================
 MODEL_PATH = "/app/models/model_champion.pkl"
 SCALER_PATH = "/app/models/scaler.pkl"
+ENCODERS_PATH = "/app/models/encoders.pkl"   # fichier à générer pendant preprocessing
 
-# Colonnes numériques identifiées dans preprocess.py pour le StandardScaler
-NUM_COLS = ["tenure", 'MonthlyCharges', 'TotalCharges']
+NUM_COLS = ["tenure", "MonthlyCharges", "TotalCharges"]
 
-# Les 20 colonnes d'entrée attendues par le modèle (après encodage/scaling)
-ALL_COLS_EXCEPT_CHURN = [
-    'gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure', 'PhoneService', 
-    'MultipleLines', 'InternetService', 'OnlineSecurity', 'OnlineBackup', 
-    'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 
-    'Contract', 'PaperlessBilling', 'PaymentMethod', 'MonthlyCharges', 'TotalCharges'
+ALL_MODEL_COLS = [
+    "gender", "SeniorCitizen", "Partner", "Dependents", "tenure",
+    "PhoneService", "MultipleLines", "InternetService", "OnlineSecurity",
+    "OnlineBackup", "DeviceProtection", "TechSupport", "StreamingTV",
+    "StreamingMovies", "Contract", "PaperlessBilling", "PaymentMethod",
+    "MonthlyCharges", "TotalCharges"
 ]
 
-# --- 1. INITIALISATION ET CHARGEMENT DES ARTEFACTS ---
+# ================================
+# CHARGEMENT DES ARTEFACTS
+# ================================
 try:
     model = joblib.load(MODEL_PATH)
     scaler = joblib.load(SCALER_PATH)
-    print(f"Artefacts chargés avec succès depuis: {MODEL_PATH}")
-except Exception as e:
-    # Affiche le chemin d'accès si le chargement échoue pour diagnostic
-    print(f"Erreur LORS DU CHARGEMENT DES ARTEFACTS. Chemin actuel: {os.getcwd()}")
-    print(f"Détail de l'erreur: {e}")
-    model, scaler = None, None
 
-# --- 2. FONCTION DE PRÉDICTION ---
-@app.route('/predict', methods=['POST'])
-def predict_churn():
-    if not model or not scaler:
+    if os.path.exists(ENCODERS_PATH):
+        encoders = joblib.load(ENCODERS_PATH)
+    else:
+        encoders = None
+
+    print(">>> Modèle, scaler et encoders chargés avec succès.")
+except Exception as e:
+    print("\n>>> ERREUR : Impossible de charger les artefacts !")
+    print(f"Chemin actuel : {os.getcwd()}")
+    print(f"Détail : {e}\n")
+    model, scaler, encoders = None, None, None
+
+
+# ================================
+# FONCTION DE PRÉTRAITEMENT
+# ================================
+def preprocess_input(json_data):
+    """
+    Prépare les données brutes pour le modèle.
+    """
+    df = pd.DataFrame([json_data])
+
+    # 1. Convertir TotalCharges en numérique
+    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce").fillna(0)
+
+    # 2. Encodage : appliquer les encoders sauvegardés
+    if encoders is None:
+        raise ValueError("Encoders manquants. Fournissez encoders.pkl dans /models.")
+
+    for col, mapping in encoders.items():
+        if col in df.columns:
+            df[col] = df[col].map(mapping).fillna(-1).astype(int)
+
+    # 3. Conversion vers float
+    df = df.astype(np.float32)
+
+    # 4. Scaling
+    df_scaled = df.copy()
+    df_scaled[NUM_COLS] = scaler.transform(df_scaled[NUM_COLS])
+
+    # 5. Sélection et ordre exact des colonnes
+    df_scaled = df_scaled[ALL_MODEL_COLS]
+
+    return df_scaled
+
+
+# ================================
+# ROUTE : PREDICTION
+# ================================
+@app.route("/predict", methods=["POST"])
+def predict():
+    if model is None or scaler is None:
         return jsonify({"error": "Service indisponible (modèle non chargé)"}), 503
 
     try:
-        data = request.get_json(force=True)
-        df_input = pd.DataFrame(data)
+        input_json = request.get_json(force=True)
 
-        # --- REPRODUCTION DU PRÉTRAITEMENT ---
-        
-        # 1 & 2. Gestion de TotalCharges et NaNs
-        df_input['TotalCharges'] = pd.to_numeric(df_input['TotalCharges'], errors='coerce')
-        df_input['TotalCharges'].fillna(0, inplace=True)
-        
-        # 3. Encodage des variables catégorielles (Label Encoding)
-        # ATTENTION: Utiliser fit_transform ici est INCORRECT car il créera un encodage
-        # différent pour chaque requête, faussant la prédiction.
-        # Idéalement, les LabelEncoders doivent être sauvegardés (comme le scaler),
-        # mais si vous avez traité les données directement en production, on ne peut
-        # que forcer une transformation basée sur les valeurs.
-        for col in df_input.columns:
-            if df_input[col].dtype == 'object':
-                le = LabelEncoder()
-                # On utilise fit_transform ici, en supposant que l'ensemble des valeurs
-                # est le même que celui utilisé à l'entraînement.
-                df_input[col] = le.fit_transform(df_input[col].astype(str))
-        
-        # 4. Conversion en types numériques uniformes
-        df_input = df_input.astype(np.float32)
+        processed = preprocess_input(input_json)
 
-        # 5. Mise à l'échelle (StandardScaler)
-        df_scaled = df_input.copy()
-        df_scaled[NUM_COLS] = scaler.transform(df_scaled[NUM_COLS])
-        
-        # 6. S'assurer de l'ordre exact des colonnes avant la prédiction
-        X_pred = df_scaled[ALL_COLS_EXCEPT_CHURN]
-        
-        # --- PRÉDICTION ---
-        predictions_proba = model.predict_proba(X_pred)[:, 1] 
+        prob = model.predict_proba(processed)[:, 1][0]
+        prediction = int(prob >= 0.5)
 
-        results = {
-            "prediction": int(predictions_proba[0] >= 0.5), 
-            "probability_churn": float(predictions_proba[0])
-        }
-        
-        return jsonify(results)
+        return jsonify({
+            "prediction": prediction,
+            "probability_churn": float(prob)
+        })
 
     except Exception as e:
-        return jsonify({"error": str(e), "message": "Erreur dans le traitement des données d'entrée. Vérifiez le format JSON et les noms des colonnes."}), 400
+        return jsonify({
+            "error": str(e),
+            "message": "Erreur lors du prétraitement. Vérifiez vos colonnes."
+        }), 400
 
-# --- 3. LANCEMENT DU SERVEUR ---
-# Gunicorn prendra le relais du lancement du serveur
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+
+# ================================
+# LANCEMENT LOCAL (Gunicorn en prod)
+# ================================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080, debug=True)
