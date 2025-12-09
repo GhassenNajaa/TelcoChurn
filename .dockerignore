@@ -1,0 +1,67 @@
+# Environnements virtuels Python
+venv/
+venv.bak/
+env/
+ENV/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git (commenté pour permettre à DVC de fonctionner)
+# .git/
+.gitignore
+.gitattributes
+
+# DVC
+.dvc/cache/
+.dvc/tmp/
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Données et modèles (déjà gérés par DVC)
+data/raw/
+data/processed/
+models/*.pkl
+models/*.joblib
+
+# Logs et fichiers temporaires
+*.log
+*.tmp
+*.temp
+logs/
+tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation
+docs/_build/
+*.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
