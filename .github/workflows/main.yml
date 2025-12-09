@@ -4,7 +4,7 @@ name: CI/CD Pipeline MLOps - Docker Build & Push
 on:
   push:
     branches:
-      - main # Si votre branche principale s'appelle 'master', utilisez 'master'
+      - main
 
 jobs:
   build-and-push:
