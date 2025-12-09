@@ -31,7 +31,7 @@ jobs:
           images: 177777771/telco-churn-api 
           # Tags l'image avec 'latest' et l'identifiant court du commit (SHA)
           tags: |
-            type=raw,value=latest,enable=true
+            type=raw,value=v1,enable=true
             type=sha,prefix=,suffix=,enable=true
 
       - name: 4. Construction et Push de l'Image Docker
