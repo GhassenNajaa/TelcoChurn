@@ -18,12 +18,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copier le code de l'application
 COPY src/ ./src/
 COPY models/ ./models/
-COPY assets/ ./assets/   # si tu as un dossier assets
-COPY app.py .
-COPY gunicorn_conf.py .  # si tu utilises une config gunicorn (optionnel)
 
 # Exposer le port API
 EXPOSE 8080
 
-# Lancement de l'API via Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "src.api:app"]
+# Lancement de l'API via Gunicorn (pour Flask)
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "120", "src.api:app"]
