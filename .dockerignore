@@ -21,24 +21,28 @@ __pycache__/
 *.swo
 *~
 
-# Git (commenté pour permettre à DVC de fonctionner)
+# Git
 # .git/
 .gitignore
 .gitattributes
 
-# DVC
-.dvc/cache/
+# DVC - Fichiers temporaires uniquement.
+# ATTENTION: Nous ne devons PLUS ignorer le cache, car nous en avons besoin pour la copie dans Docker.
 .dvc/tmp/
+# Ne pas ignorer les fichiers de configuration (.dvc/config) ni le cache réel.
 
 # MLflow
 mlruns/
 mlartifacts/
 
-# Données et modèles (déjà gérés par DVC)
+# Données brutes (déjà gérées par DVC)
 data/raw/
-data/processed/
-models/*.pkl
-models/*.joblib
+
+# data/processed/
+
+
+# models/*.pkl
+# models/*.joblib
 
 # Logs et fichiers temporaires
 *.log
@@ -59,9 +63,10 @@ htmlcov/
 
 # Documentation
 docs/_build/
-*.md
+# Ne pas ignorer README.md qui pourrait être utile
+# *.md
 
-# Docker
+# Docker - garder ces fichiers hors de l'image
 Dockerfile
 docker-compose.yml
 .dockerignore

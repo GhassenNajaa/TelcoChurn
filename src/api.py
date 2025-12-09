@@ -1,4 +1,4 @@
-
+# src/api.py (Version Corrigée pour Inclure la Logique d'Encodage/Scaling)
 
 import joblib
 import pandas as pd

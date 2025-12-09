@@ -93,7 +93,7 @@ def run_preprocessing():
     np.save(os.path.join(PROCESSED_DATA_DIR, 'y_train.npy'), y_train)
     np.save(os.path.join(PROCESSED_DATA_DIR, 'y_test.npy'), y_test)
     
-    print("\n✅ Prétraitement terminé. Données prêtes pour l'entraînement.")
+    print("\nPrétraitement terminé. Données prêtes pour l'entraînement.")
     print(f"Shapes finales: X_train {X_train.shape}, X_test {X_test.shape}")
 
 if __name__ == '__main__':
