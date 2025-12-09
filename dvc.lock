@@ -9,14 +9,18 @@ stages:
       size: 977501
     - path: src/preprocess.py
       hash: md5
-      md5: dbb4816f85aa981aae34f55da1c83859
-      size: 3925
+      md5: bd83a6b61a6771e9858e3e2fc80cf432
+      size: 4650
     outs:
     - path: data/processed
       hash: md5
       md5: 27f04f8088f832d39e4dcaa793be228c.dir
       size: 743318
       nfiles: 4
+    - path: models/encoders.pkl
+      hash: md5
+      md5: 9e240cdb8618dd925188e38c756676f5
+      size: 1605
     - path: models/scaler.pkl
       hash: md5
       md5: 83e379ee3bfc0f1a8da94447a958b73f
@@ -29,16 +33,20 @@ stages:
       md5: 27f04f8088f832d39e4dcaa793be228c.dir
       size: 743318
       nfiles: 4
+    - path: models/encoders.pkl
+      hash: md5
+      md5: 9e240cdb8618dd925188e38c756676f5
+      size: 1605
     - path: models/scaler.pkl
       hash: md5
       md5: 83e379ee3bfc0f1a8da94447a958b73f
       size: 959
     - path: src/train.py
       hash: md5
-      md5: ced7d3208cfe59b7517643d7e073348b
-      size: 14377
+      md5: 795b4aeb1e9b25eecda193cf94958707
+      size: 7418
     outs:
     - path: models/model_champion.pkl
       hash: md5
-      md5: 918118f9fe37b01e96961d3b59c3d0ff
-      size: 214881
+      md5: b689f4c8a96cc267e197ff7ea5ba3949
+      size: 180836
