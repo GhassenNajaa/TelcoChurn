@@ -7,7 +7,7 @@ data/raw/
 data/processed/
 
 # Modèles volumineux ou checkpoints
-models/*.pkl
+#models/*.pkl
 models/*.h5
 models/*.joblib
 
