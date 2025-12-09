@@ -1,43 +1,97 @@
-name: CI/CD Pipeline MLOps - Docker Build & Push
+name: CI/CD Pipeline MLOps - Complete
 
 on:
   push:
     branches:
+      - main      # Production
+      - staging   # Staging
+      - develop   # Development
+  pull_request:
+    branches:
       - main
 
 jobs:
-  build-and-push:
+  # ========================================
+  # JOB 1 : TESTS AUTOMATISÉS
+  # ========================================
+  test:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: 1. Checkout du code
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pytest pytest-cov
+          pip install -r requirements.txt
+      
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --cov=src --cov-report=term-missing
+        continue-on-error: false
+      
+      - name: Check code quality (optional)
+        run: |
+          pip install flake8
+          flake8 src/ --max-line-length=120 --ignore=E501,W503
+        continue-on-error: true
+
+  # ========================================
+  # JOB 2 : BUILD & PUSH DOCKER (si tests OK)
+  # ========================================
+  build-and-push:
+    needs: test  # Ne s'exécute que si les tests passent
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: 2. Set up QEMU (pour buildx multi-platform)
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
-      - name: 3. Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 4. Login to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: 5. Generate image metadata (tags, labels)
+      - name: Determine environment and tag
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "ENV=prod" >> $GITHUB_OUTPUT
+            echo "TAG=latest" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "ENV=staging" >> $GITHUB_OUTPUT
+            echo "TAG=staging" >> $GITHUB_OUTPUT
+          else
+            echo "ENV=dev" >> $GITHUB_OUTPUT
+            echo "TAG=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate image metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: 177777771/telco-churn-api
           tags: |
-            type=raw,value=latest
-            type=raw,value=v1
+            type=raw,value=${{ steps.env.outputs.TAG }}
             type=sha,prefix=sha-
 
-      - name: 6. Build and push Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -48,3 +102,44 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      
+      - name: Deployment info
+        run: |
+          echo "=========================================="
+          echo "  DÉPLOIEMENT RÉUSSI"
+          echo "=========================================="
+          echo "Environnement : ${{ steps.env.outputs.ENV }}"
+          echo "Tag Docker    : ${{ steps.env.outputs.TAG }}"
+          echo "Image         : 177777771/telco-churn-api:${{ steps.env.outputs.TAG }}"
+          echo ""
+          echo "Pour déployer localement :"
+          echo "  docker pull 177777771/telco-churn-api:${{ steps.env.outputs.TAG }}"
+          echo "  docker run -d -p 8081:8080 177777771/telco-churn-api:${{ steps.env.outputs.TAG }}"
+          echo "=========================================="
+
+  # ========================================
+  # JOB 3 : TESTS D'INTÉGRATION (optionnel)
+  # ========================================
+  integration-test:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Pull and test Docker image
+        run: |
+          docker pull 177777771/telco-churn-api:latest
+          docker run -d -p 8080:8080 --name test-api 177777771/telco-churn-api:latest
+          
+          # Attendre que le conteneur démarre
+          sleep 10
+          
+          # Test health check
+          curl -f http://localhost:8080/health || exit 1
+          
+          # Test metrics endpoint
+          curl -f http://localhost:8080/metrics || exit 1
+          
+          echo "Tests d'intégration réussis"
+          
+          docker stop test-api
+          docker rm test-api
