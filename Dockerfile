@@ -22,5 +22,8 @@ COPY . .
 
 RUN mkdir -p data/processed models mlruns
 
-# CORRECTION CLÉ : Ajout de --no-scm pour éviter l'erreur Git
-CMD ["dvc", "repro", "--no-commit"]
+# EXPOSE le port où l'API écoute (optionnel mais bonne pratique)
+EXPOSE 8080
+
+# Ceci exécute src/api.py en production
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "src.api:app"]
