@@ -22,27 +22,22 @@ __pycache__/
 *~
 
 # Git
-# .git/
+.git/
 .gitignore
 .gitattributes
 
-# DVC - Fichiers temporaires uniquement.
-# ATTENTION: Nous ne devons PLUS ignorer le cache, car nous en avons besoin pour la copie dans Docker.
+# DVC - On garde la config mais pas le cache lourd
+.dvc/cache/
 .dvc/tmp/
-# Ne pas ignorer les fichiers de configuration (.dvc/config) ni le cache réel.
 
 # MLflow
 mlruns/
 mlartifacts/
+mlflow.db
 
-# Données brutes (déjà gérées par DVC)
+# Données brutes (on n'en a pas besoin dans l'image)
 data/raw/
-
-# data/processed/
-
-
-# models/*.pkl
-# models/*.joblib
+data/processed/
 
 # Logs et fichiers temporaires
 *.log
@@ -56,17 +51,30 @@ tmp/
 Thumbs.db
 desktop.ini
 
-# Tests
+# Tests (pas besoin dans l'image de prod)
+tests/
 .pytest_cache/
 .coverage
 htmlcov/
 
 # Documentation
 docs/_build/
-# Ne pas ignorer README.md qui pourrait être utile
-# *.md
+README.md
+*.md
+
+# Scripts de déploiement (pas besoin dans l'image)
+deploy.sh
+deploy.ps1
+deploy_local.sh
+
+# Notebooks (pas besoin dans l'image)
+notebooks/
 
 # Docker - garder ces fichiers hors de l'image
 Dockerfile
 docker-compose.yml
 .dockerignore
+
+# src/       
+# models/    
+# requirements.txt 
