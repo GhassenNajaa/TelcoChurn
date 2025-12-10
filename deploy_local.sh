@@ -17,7 +17,7 @@ echo "=========================================="
 
 # 1. Pull de la dernière image
 echo ""
-echo "[1/4] 🔄 Pull de la dernière image depuis Docker Hub..."
+echo "[1/4]  Pull de la dernière image depuis Docker Hub..."
 if docker pull $IMAGE_NAME; then
     echo "Image récupérée avec succès"
 else

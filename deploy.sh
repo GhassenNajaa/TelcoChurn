@@ -13,13 +13,13 @@ case $ENVIRONMENT in
     IMAGE_TAG="dev"
     CONTAINER_NAME="telco-api-dev"
     LOCAL_PORT="8082"
-    echo "🔧 Déploiement en DÉVELOPPEMENT"
+    echo " Déploiement en DÉVELOPPEMENT"
     ;;
   staging)
     IMAGE_TAG="staging"
     CONTAINER_NAME="telco-api-staging"
     LOCAL_PORT="8081"
-    echo "🧪 Déploiement en STAGING"
+    echo " Déploiement en STAGING"
     ;;
   prod)
     IMAGE_TAG="latest"
@@ -72,7 +72,7 @@ fi
 
 # 4. Lancer le nouveau conteneur
 echo ""
-echo "[4/4] 🚀 Lancement du nouveau conteneur..."
+echo "[4/4] Lancement du nouveau conteneur..."
 if docker run -d \
   --name $CONTAINER_NAME \
   -p $LOCAL_PORT:$CONTAINER_PORT \
@@ -91,7 +91,7 @@ echo "=========================================="
 echo "Déploiement terminé !"
 echo "=========================================="
 echo ""
-echo "📊 Informations :"
+echo "Informations :"
 echo "   Environnement : $ENVIRONMENT"
 echo "   Conteneur     : $CONTAINER_NAME"
 echo "   Port local    : $LOCAL_PORT"
